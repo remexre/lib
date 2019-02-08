@@ -1,7 +1,7 @@
 libremexre
 ==========
 
-[![Build Status](https://travis-ci.org/remexre/libremexre.svg?branch=master)](https://travis-ci.org/remexre/libremexre) [![Dependency Status](https://deps.rs/repo/github/remexre/libremexre/status.svg)](https://deps.rs/repo/github/remexre/libremexre)
+[![Build Status](https://travis-ci.org/remexre/lib.svg?branch=master)](https://travis-ci.org/remexre/lib) [![Dependency Status](https://deps.rs/repo/github/remexre/lib/status.svg)](https://deps.rs/repo/github/remexre/lib) [![Documentation](https://docs.rs/libremexre/badge.svg)](https://docs.rs/libremexre/)
 
 A bunch of utlities I found myself needing over and over again.
 

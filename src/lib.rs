@@ -4,7 +4,7 @@
 extern crate derive_more;
 
 #[macro_use]
-pub mod macros;
+mod macros;
 
 #[cfg(feature = "log")]
 #[doc(hidden)]
