@@ -1,0 +1,7 @@
+language: rust
+cache:
+- cargo
+
+script:
+- cargo test --all --no-default-features
+- cargo test --all --features backtrace,futures,log,packer,tokio,tokio-threadpool,warp
