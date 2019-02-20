@@ -1,3 +1,6 @@
+//! Utilities for use with [futures](https://docs.rs/futures/0.1.25/futures/) and
+//! [tokio](https://docs.rs/tokio/0.1.15/tokio/).
+
 use futures::{future::poll_fn, Future};
 
 /// A higher-level version of `tokio_threadpool::blocking`.

@@ -21,3 +21,9 @@ pub mod errors;
 pub mod futures;
 #[cfg(feature = "warp")]
 pub mod warp;
+
+/// Runs the given closure immediately. Mostly for use as replacement for `catch` blocks, which
+/// seem to be taking a while to stabilize...
+pub fn catch<F: FnOnce() -> T, T>(func: F) -> T {
+    func()
+}
