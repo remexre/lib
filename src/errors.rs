@@ -34,6 +34,19 @@ impl<T: Debug + Display> GenericError<T> {
     pub fn kind(&self) -> &T {
         &self.kind
     }
+
+    /// Creates an error with the given kind and cause.
+    pub fn with_cause<C>(kind: T, cause: C) -> GenericError<T>
+    where
+        C: Into<Box<dyn Error + 'static>>,
+    {
+        GenericError {
+            kind,
+            cause: Some(cause.into()),
+            #[cfg(feature = "backtrace")]
+            backtrace: Backtrace::new(),
+        }
+    }
 }
 
 impl<T: Debug + Display> Error for GenericError<T> {

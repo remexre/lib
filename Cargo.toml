@@ -7,7 +7,7 @@ homepage = "https://github.com/remexre/lib"
 license = "Apache-2.0/MIT"
 name = "libremexre"
 repository = "https://github.com/remexre/lib"
-version = "0.1.2"
+version = "0.1.3"
 
 [dependencies]
 backtrace = { version = "0.3.13", optional = true }
