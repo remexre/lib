@@ -19,7 +19,7 @@ pub extern crate warp as warp_;
 pub mod errors;
 #[cfg(feature = "futures")]
 pub mod futures;
-#[cfg(feature = "warp")]
+#[cfg(all(feature = "futures", feature = "warp"))]
 pub mod warp;
 
 /// Runs the given closure immediately. Mostly for use as replacement for `catch` blocks, which
