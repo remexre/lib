@@ -103,7 +103,7 @@ impl Error for E {}
 #[macro_export]
 macro_rules! err {
     ($($tt:tt)*) => {
-        $crate::std::boxed::Box::new($crate::errors::E::from(format_args!($($tt)*)) as $crate::std::boxed::Box<dyn $crate::std::error::Error>)
+        std::boxed::Box::new($crate::errors::E::from(format_args!($($tt)*)) as std::boxed::Box<dyn std::error::Error>)
     };
 }
 
