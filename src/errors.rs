@@ -1,10 +1,12 @@
 //! Stuff for error-handling.
 
+use antidote::Mutex;
 #[cfg(feature = "backtrace")]
 use backtrace::Backtrace;
 use std::{
     error::Error,
-    fmt::{Debug, Display},
+    fmt::{Debug, Display, Formatter, Result as FmtResult},
+    mem::replace,
 };
 
 /// A convenient alias for `Result`.
@@ -86,9 +88,53 @@ impl<'a> Iterator for ErrorCauseIter<'a> {
     }
 }
 
+// All the commented stuff will work on rustc 1.35.0+.
+
+trait EFunc {
+    fn make_string(self: Box<Self>) -> String;
+}
+
+impl<F: FnOnce() -> String> EFunc for F {
+    fn make_string(self: Box<Self>) -> String {
+        self()
+    }
+}
+
 /// An error that is a wrapper around a `Formatter`.
-#[derive(Debug, Display, From)]
-pub struct E(std::fmt::Arguments<'static>);
+pub struct E(Mutex<Result<String, Box<dyn EFunc>>>);
+// pub struct E(Mutex<Result<String, Box<dyn FnOnce() -> String>>>);
+
+impl E {
+    fn as_string(&self) -> String {
+        let mut lock = self.0.lock();
+        match replace(&mut *lock, Ok("[panicked]".to_string())) {
+            Ok(_) => {}
+            // Err(func) => *lock = Ok(func()),
+            Err(func) => *lock = Ok(func.make_string()),
+        }
+        match lock.as_ref() {
+            Ok(s) => s.clone(),
+            Err(_) => unreachable!(),
+        }
+    }
+
+    #[doc(hidden)]
+    pub fn from_closure<F: 'static + FnOnce() -> String>(f: F) -> E {
+        E(Mutex::new(Err(Box::new(f))))
+    }
+}
+
+impl Debug for E {
+    fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
+        fmt.write_str(&self.as_string())
+    }
+}
+
+impl Display for E {
+    fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
+        fmt.write_str(&self.as_string())
+    }
+}
 
 impl Error for E {}
 
@@ -102,9 +148,11 @@ impl Error for E {}
 /// ```
 #[macro_export]
 macro_rules! err {
-    ($($tt:tt)*) => {
-        std::boxed::Box::new($crate::errors::E::from(format_args!($($tt)*)) as std::boxed::Box<dyn std::error::Error>)
-    };
+    ($($tt:tt)*) => {{
+        let e = $crate::errors::E::from_closure(move || std::format!($($tt)*));
+        let e: std::boxed::Box<dyn std::error::Error> = std::boxed::Box::new(e);
+        e
+    }};
 }
 
 /// Logs an error, including its causes.
