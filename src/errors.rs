@@ -86,6 +86,27 @@ impl<'a> Iterator for ErrorCauseIter<'a> {
     }
 }
 
+/// An error that is a wrapper around a `Formatter`.
+#[derive(Debug, Display, From)]
+pub struct E(std::fmt::Arguments<'static>);
+
+impl Error for E {}
+
+/// Creates an instance of `E` as a `Box<dyn Error>`.
+///
+/// ```rust
+/// # use libremexre::err;
+/// # use std::error::Error;
+/// let e: Box<dyn Error> = err!("foo {} bar", 1);
+/// assert_eq!(e.to_string(), "foo 1 bar");
+/// ```
+#[macro_export]
+macro_rules! err {
+    ($($tt:tt)*) => {
+        $crate::std::boxed::Box::new($crate::errors::E::from(format_args!($($tt)*)) as $crate::std::boxed::Box<dyn $crate::std::error::Error>)
+    };
+}
+
 /// Logs an error, including its causes.
 #[cfg(feature = "log")]
 pub fn log_err(err: &(dyn Error + 'static)) {
