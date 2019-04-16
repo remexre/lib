@@ -90,11 +90,11 @@ impl<'a> Iterator for ErrorCauseIter<'a> {
 
 // All the commented stuff will work on rustc 1.35.0+.
 
-trait EFunc {
+trait EFunc: Send {
     fn make_string(self: Box<Self>) -> String;
 }
 
-impl<F: FnOnce() -> String> EFunc for F {
+impl<F: FnOnce() -> String + Send> EFunc for F {
     fn make_string(self: Box<Self>) -> String {
         self()
     }
@@ -119,7 +119,7 @@ impl E {
     }
 
     #[doc(hidden)]
-    pub fn from_closure<F: 'static + FnOnce() -> String>(f: F) -> E {
+    pub fn from_closure<F: 'static + FnOnce() -> String + Send>(f: F) -> E {
         E(Mutex::new(Err(Box::new(f))))
     }
 }
@@ -150,7 +150,8 @@ impl Error for E {}
 macro_rules! err {
     ($($tt:tt)*) => {{
         let e = $crate::errors::E::from_closure(move || std::format!($($tt)*));
-        let e: std::boxed::Box<dyn std::error::Error> = std::boxed::Box::new(e);
+        let e: std::boxed::Box<dyn std::error::Error + std::marker::Send + std::marker::Sync> =
+            std::boxed::Box::new(e);
         e
     }};
 }
