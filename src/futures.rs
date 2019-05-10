@@ -12,7 +12,7 @@ where
 {
     let mut func = Some(func);
     poll_fn(move || {
-        tokio_threadpool::blocking(|| (func.take().unwrap())())
+        tokio_threadpool::blocking(func.take().unwrap())
             .map_err(|_| panic!("Blocking operations must be run inside a Tokio thread pool!"))
     })
     .and_then(|r| r)
@@ -20,6 +20,7 @@ where
 
 /// Allows selecting over several streams, keyed by identifiers. Polls in a round-robin fashion.
 /// Streams are dropped when they yield `Ok(Ready(None))`.
+#[derive(Debug)]
 pub struct SelectSet<K: Clone + Eq + Hash, S: Stream> {
     current: usize,
     keys: Vec<K>,
@@ -49,7 +50,7 @@ impl<K: Clone + Eq + Hash, S: Stream> SelectSet<K, S> {
             // This may deviate from round-robin behavior, when what we're removing was just
             // polled. However, the code to fix this is more trouble than it's worth.
             let n = self.keys.iter().position(|k| k == key).unwrap();
-            self.keys.remove(n);
+            let _ = self.keys.remove(n);
 
             stream
         })
@@ -84,7 +85,7 @@ impl<K: Clone + Eq + Hash, S: Stream> Stream for SelectSet<K, S> {
 
         if let Ok(Async::Ready(None)) = r {
             let key = self.keys[self.current].clone();
-            self.remove(&key);
+            let _ = self.remove(&key);
         }
         r
     }

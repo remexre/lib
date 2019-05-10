@@ -5,3 +5,4 @@ watch TARGET="all":
 test:
 	cargo test --all --no-default-features
 	cargo test --all --features backtrace,futures,log,packer,tokio,tokio-threadpool,warp
+	cargo clippy --all-features --all-targets -- -D warnings
