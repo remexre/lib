@@ -7,7 +7,7 @@ homepage = "https://github.com/remexre/lib"
 license = "Apache-2.0/MIT"
 name = "libremexre"
 repository = "https://github.com/remexre/lib"
-version = "0.1.7"
+version = "0.1.8"
 
 [dependencies]
 antidote = "1.0.0"
@@ -21,5 +21,6 @@ tokio = { version = "0.1.15", optional = true }
 tokio-threadpool = { version = "0.1.11", optional = true }
 warp = { version = "0.1.12", optional = true }
 
-[features]
-default = ["backtrace", "futures", "log", "packer", "pretty_env_logger", "tokio", "tokio-threadpool", "warp"]
+[package.metadata.docs.rs]
+features = ["backtrace", "futures", "log", "packer", "pretty_env_logger", "tokio", "tokio-threadpool", "warp"]
+all-features = true
