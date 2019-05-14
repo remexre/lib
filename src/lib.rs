@@ -57,9 +57,15 @@ pub mod warp;
 
 #[cfg(all(feature = "log", feature = "pretty_env_logger"))]
 pub use logger::init_logger;
+use std::sync::Arc;
 
 /// Runs the given closure immediately. Mostly for use as replacement for `catch` blocks, which
 /// seem to be taking a while to stabilize...
 pub fn catch<F: FnOnce() -> T, T>(func: F) -> T {
     func()
+}
+
+/// Unwraps an `Arc`, cloning the inner value if necessary.
+pub fn unwrap_arc<T: Clone>(arc: Arc<T>) -> T {
+    Arc::try_unwrap(arc).unwrap_or_else(|arc| (*arc).clone())
 }
