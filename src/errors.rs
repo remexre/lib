@@ -88,29 +88,15 @@ impl<'a> Iterator for ErrorCauseIter<'a> {
     }
 }
 
-// All the commented stuff will work on rustc 1.35.0+.
-
-trait EFunc: Send {
-    fn make_string(self: Box<Self>) -> String;
-}
-
-impl<F: FnOnce() -> String + Send> EFunc for F {
-    fn make_string(self: Box<Self>) -> String {
-        self()
-    }
-}
-
 /// An error that is a wrapper around a `Formatter`.
-pub struct E(Mutex<Result<String, Box<dyn EFunc>>>);
-// pub struct E(Mutex<Result<String, Box<dyn FnOnce() -> String>>>);
+pub struct E(Mutex<Result<String, Box<dyn FnOnce() -> String + Send>>>);
 
 impl E {
     fn as_string(&self) -> String {
         let mut lock = self.0.lock();
         match replace(&mut *lock, Ok("[panicked]".to_string())) {
             Ok(_) => {}
-            // Err(func) => *lock = Ok(func()),
-            Err(func) => *lock = Ok(func.make_string()),
+            Err(func) => *lock = Ok(func()),
         }
         match lock.as_ref() {
             Ok(s) => s.clone(),

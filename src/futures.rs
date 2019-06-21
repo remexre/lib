@@ -1,7 +1,7 @@
 //! Utilities for use with [futures](https://docs.rs/futures/0.1.25/futures/) and
 //! [tokio](https://docs.rs/tokio/0.1.15/tokio/).
 
-use futures::{future::poll_fn, Async, Future, Stream};
+use futures::{future::poll_fn, Async, Future, Sink, Stream};
 use std::{collections::HashMap, hash::Hash};
 
 /// A higher-level version of `tokio_threadpool::blocking`.
@@ -16,6 +16,36 @@ where
             .map_err(|_| panic!("Blocking operations must be run inside a Tokio thread pool!"))
     })
     .and_then(|r| r)
+}
+
+/// Returns a future that sends a value to a sink, but does not flush it.
+pub fn send_to_sink<S: Sink>(
+    sink: S,
+    item: S::SinkItem,
+) -> impl Future<Item = S, Error = S::SinkError> {
+    struct SendToSink<S: Sink>(Option<(S, S::SinkItem)>);
+
+    impl<S: Sink> Future for SendToSink<S> {
+        type Item = S;
+        type Error = S::SinkError;
+
+        fn poll(&mut self) -> Result<Async<S>, S::SinkError> {
+            let (mut sink, item) = self
+                .0
+                .take()
+                .expect("send_to_sink: values not present; did the sink panic?");
+            match sink.start_send(item) {
+                Ok(AsyncSink::Ready) => Ok(Async::Ready(sink)),
+                Ok(AsyncSink::NotReady(item)) => {
+                    self.0 = Some((sink, item));
+                    Ok(Async::NotReady)
+                }
+                Err(err) => Err(err),
+            }
+        }
+    }
+
+    SendToSink(Some((sink, item)))
 }
 
 /// Allows selecting over several streams, keyed by identifiers. Polls in a round-robin fashion.
