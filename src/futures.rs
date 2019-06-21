@@ -1,7 +1,7 @@
 //! Utilities for use with [futures](https://docs.rs/futures/0.1.25/futures/) and
 //! [tokio](https://docs.rs/tokio/0.1.15/tokio/).
 
-use futures::{future::poll_fn, Async, Future, Sink, Stream};
+use futures::prelude::*;
 use std::{collections::HashMap, hash::Hash};
 
 /// A higher-level version of `tokio_threadpool::blocking`.
@@ -10,6 +10,8 @@ pub fn blocking<E, F, T>(func: F) -> impl Future<Item = T, Error = E>
 where
     F: FnOnce() -> Result<T, E>,
 {
+    use futures::future::poll_fn;
+
     let mut func = Some(func);
     poll_fn(move || {
         tokio_threadpool::blocking(func.take().unwrap())
