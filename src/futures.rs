@@ -20,6 +20,45 @@ where
     .and_then(|r| r)
 }
 
+/// Runs a future, then returns it.
+///
+/// ```
+/// # use futures::prelude::*;
+/// # use libremexre::futures::run_and_return;
+///
+/// #[derive(Debug, PartialEq)]
+/// struct FooFuture(usize);
+/// impl Future for FooFuture {
+///     type Item = usize;
+///     type Error = ();
+///     fn poll(&mut self) -> Result<Async<usize>, ()> {
+///         Ok(Async::Ready(self.0))
+///     }
+/// }
+///
+/// assert_eq!(run_and_return(FooFuture(42)).wait(), Ok((FooFuture(42), 42)));
+/// ```
+pub fn run_and_return<Fut: Future>(
+    fut: Fut,
+) -> impl Future<Item = (Fut, Fut::Item), Error = Fut::Error> {
+    struct RunAndReturn<Fut: Future>(Option<Fut>);
+
+    impl<Fut: Future> Future for RunAndReturn<Fut> {
+        type Item = (Fut, Fut::Item);
+        type Error = Fut::Error;
+
+        fn poll(&mut self) -> Result<Async<(Fut, Fut::Item)>, Fut::Error> {
+            match self.0.as_mut().map(|fut| fut.poll()) {
+                Some(Ok(Async::Ready(val))) => Ok(Async::Ready((self.0.take().unwrap(), val))),
+                Some(Ok(Async::NotReady)) | None => Ok(Async::NotReady),
+                Some(Err(err)) => Err(err),
+            }
+        }
+    }
+
+    RunAndReturn(Some(fut))
+}
+
 /// Returns a future that sends a value to a sink, but does not flush it.
 pub fn send_to_sink<S: Sink>(
     sink: S,
